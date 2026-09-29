@@ -1,0 +1,15 @@
+# Dependencies and build output
+node_modules/
+dist/
+out/
+*.vsix
+
+# VS Code extension test runs
+.vscode-test/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store

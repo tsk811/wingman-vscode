@@ -1,0 +1,131 @@
+{
+  "name": "wingman",
+  "displayName": "Wingman",
+  "description": "Write a short @ai: comment, save, and Wingman fills in just that block using a coding agent (Codex CLI).",
+  "version": "0.0.1",
+  "publisher": "tsk811",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "wingman.startSession",
+        "title": "Start session",
+        "category": "Wingman"
+      },
+      {
+        "command": "wingman.endSession",
+        "title": "End session",
+        "category": "Wingman"
+      },
+      {
+        "command": "wingman.implement",
+        "title": "Implement markers",
+        "category": "Wingman"
+      },
+      {
+        "command": "wingman.sessionMenu",
+        "title": "Session menu",
+        "category": "Wingman"
+      },
+      {
+        "command": "wingman.showLog",
+        "title": "Show log",
+        "category": "Wingman"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "wingman.implement",
+        "key": "ctrl+alt+i",
+        "mac": "cmd+alt+i",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Wingman",
+      "properties": {
+        "wingman.provider": {
+          "type": "string",
+          "enum": [
+            "codex"
+          ],
+          "default": "codex",
+          "description": "Which coding agent implements markers."
+        },
+        "wingman.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model name passed to the agent. Empty uses the CLI's default."
+        },
+        "wingman.reasoningEffort": {
+          "type": "string",
+          "enum": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "default": "medium",
+          "description": "How hard the agent thinks. Lower is faster."
+        },
+        "wingman.markerPrefix": {
+          "type": "string",
+          "default": "@ai",
+          "description": "Marker tag inside comments. `@ai:` is a command, `@ai-reply:` is the agent's answer."
+        },
+        "wingman.triggerOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Implement markers whenever a file containing one is saved."
+        },
+        "wingman.excludeGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/out/**",
+            "**/build/**",
+            "**/.git/**"
+          ],
+          "description": "Files skipped when scanning the workspace for markers."
+        },
+        "wingman.codexPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the codex binary. Empty finds `codex` on your PATH."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "npm run typecheck && node esbuild.mjs --production && vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@openai/codex-sdk": "^0.159.0",
+    "diff": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "~1.100.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}
