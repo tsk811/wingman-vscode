@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 export type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
-export interface WingmanConfig {
+export interface SidekickConfig {
   provider: string;
   model: string;
   reasoningEffort: ReasoningEffort;
@@ -12,8 +12,8 @@ export interface WingmanConfig {
   codexPath: string;
 }
 
-export function getConfig(): WingmanConfig {
-  const c = vscode.workspace.getConfiguration("wingman");
+export function getConfig(): SidekickConfig {
+  const c = vscode.workspace.getConfiguration("sidekick");
   return {
     provider: c.get("provider", "codex"),
     model: c.get("model", "").trim(),

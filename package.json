@@ -1,7 +1,7 @@
 {
-  "name": "wingman",
-  "displayName": "Wingman",
-  "description": "Write a short @ai: comment, save, and Wingman fills in just that block using a coding agent (Codex CLI).",
+  "name": "sidekick",
+  "displayName": "Sidekick",
+  "description": "Write a short @ai: comment, save, and Sidekick fills in just that block using a coding agent (Codex CLI).",
   "version": "0.0.1",
   "publisher": "tsk811",
   "license": "MIT",
@@ -19,43 +19,43 @@
   "contributes": {
     "commands": [
       {
-        "command": "wingman.startSession",
+        "command": "sidekick.startSession",
         "title": "Start session",
-        "category": "Wingman"
+        "category": "Sidekick"
       },
       {
-        "command": "wingman.endSession",
+        "command": "sidekick.endSession",
         "title": "End session",
-        "category": "Wingman"
+        "category": "Sidekick"
       },
       {
-        "command": "wingman.implement",
+        "command": "sidekick.implement",
         "title": "Implement markers",
-        "category": "Wingman"
+        "category": "Sidekick"
       },
       {
-        "command": "wingman.sessionMenu",
+        "command": "sidekick.sessionMenu",
         "title": "Session menu",
-        "category": "Wingman"
+        "category": "Sidekick"
       },
       {
-        "command": "wingman.showLog",
+        "command": "sidekick.showLog",
         "title": "Show log",
-        "category": "Wingman"
+        "category": "Sidekick"
       }
     ],
     "keybindings": [
       {
-        "command": "wingman.implement",
+        "command": "sidekick.implement",
         "key": "ctrl+alt+i",
         "mac": "cmd+alt+i",
         "when": "editorTextFocus"
       }
     ],
     "configuration": {
-      "title": "Wingman",
+      "title": "Sidekick",
       "properties": {
-        "wingman.provider": {
+        "sidekick.provider": {
           "type": "string",
           "enum": [
             "codex"
@@ -63,12 +63,12 @@
           "default": "codex",
           "description": "Which coding agent implements markers."
         },
-        "wingman.model": {
+        "sidekick.model": {
           "type": "string",
           "default": "",
           "description": "Model name passed to the agent. Empty uses the CLI's default."
         },
-        "wingman.reasoningEffort": {
+        "sidekick.reasoningEffort": {
           "type": "string",
           "enum": [
             "minimal",
@@ -79,17 +79,17 @@
           "default": "medium",
           "description": "How hard the agent thinks. Lower is faster."
         },
-        "wingman.markerPrefix": {
+        "sidekick.markerPrefix": {
           "type": "string",
           "default": "@ai",
           "description": "Marker tag inside comments. `@ai:` is a command, `@ai-reply:` is the agent's answer."
         },
-        "wingman.triggerOnSave": {
+        "sidekick.triggerOnSave": {
           "type": "boolean",
           "default": true,
           "description": "Implement markers whenever a file containing one is saved."
         },
-        "wingman.excludeGlobs": {
+        "sidekick.excludeGlobs": {
           "type": "array",
           "items": {
             "type": "string"
@@ -103,7 +103,7 @@
           ],
           "description": "Files skipped when scanning the workspace for markers."
         },
-        "wingman.codexPath": {
+        "sidekick.codexPath": {
           "type": "string",
           "default": "",
           "description": "Path to the codex binary. Empty finds `codex` on your PATH."

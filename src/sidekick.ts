@@ -1,21 +1,21 @@
 import * as vscode from "vscode";
 import { addMissingImports, applyResults } from "./apply";
 import { ChangeTracker } from "./changes";
-import { getConfig, WingmanConfig } from "./config";
+import { getConfig, SidekickConfig } from "./config";
 import { Marker, parseMarkers, waitingSignature } from "./markers";
 import { primingPrompt, turnPrompt } from "./prompt";
 import { CodexProvider } from "./providers/codex";
 import { AgentProvider, TurnUsage } from "./providers/types";
 import { listFiles, readText } from "./workspaceFiles";
 
-const SESSION_KEY = "wingman.sessionId";
-const LAST_TURN_KEY = "wingman.lastTurnAt";
-const WAITING_KEY = "wingman.waiting";
+const SESSION_KEY = "sidekick.sessionId";
+const LAST_TURN_KEY = "sidekick.lastTurnAt";
+const WAITING_KEY = "sidekick.waiting";
 const HIGHLIGHT_MS = 4000;
 
 type Busy = { kind: "starting" } | { kind: "running"; markers: number };
 
-export class Wingman implements vscode.Disposable {
+export class Sidekick implements vscode.Disposable {
   private readonly status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   private readonly highlight = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
@@ -31,7 +31,7 @@ export class Wingman implements vscode.Disposable {
     private readonly ctx: vscode.ExtensionContext,
     private readonly log: vscode.LogOutputChannel,
   ) {
-    this.status.command = "wingman.sessionMenu";
+    this.status.command = "sidekick.sessionMenu";
     this.updateStatus();
     this.status.show();
   }
@@ -53,12 +53,12 @@ export class Wingman implements vscode.Disposable {
   private root(): vscode.WorkspaceFolder | undefined {
     const root = vscode.workspace.workspaceFolders?.[0];
     if (!root) {
-      void vscode.window.showWarningMessage("Wingman needs an open folder.");
+      void vscode.window.showWarningMessage("Sidekick needs an open folder.");
     }
     return root;
   }
 
-  private provider(config: WingmanConfig): AgentProvider {
+  private provider(config: SidekickConfig): AgentProvider {
     switch (config.provider) {
       case "codex":
       default:
@@ -70,7 +70,7 @@ export class Wingman implements vscode.Disposable {
 
   async startSession(): Promise<boolean> {
     if (this.busy) {
-      void vscode.window.showInformationMessage("Wingman is busy. Wait for the current run to finish or cancel it.");
+      void vscode.window.showInformationMessage("Sidekick is busy. Wait for the current run to finish or cancel it.");
       return false;
     }
     const root = this.root();
@@ -88,12 +88,12 @@ export class Wingman implements vscode.Disposable {
       const problem = await provider.check(config);
       if (problem) {
         this.queued = undefined;
-        void vscode.window.showErrorMessage(`Wingman: ${problem}`);
+        void vscode.window.showErrorMessage(`Sidekick: ${problem}`);
         return false;
       }
       this.log.info(`Starting ${provider.name} session in ${root.uri.fsPath} (effort: ${config.reasoningEffort})`);
       const res = await vscode.window.withProgress(
-        { location: vscode.ProgressLocation.Window, title: "Wingman: reading the project" },
+        { location: vscode.ProgressLocation.Window, title: "Sidekick: reading the project" },
         () =>
           provider.startSession({
             cwd: root.uri.fsPath,
@@ -106,7 +106,7 @@ export class Wingman implements vscode.Disposable {
       await this.ctx.workspaceState.update(LAST_TURN_KEY, startedAt);
       this.changes.reset();
       this.log.info(`Session ${res.sessionId} ready ${this.usageText(res.usage, startedAt)}\n${res.reply}`);
-      void vscode.window.setStatusBarMessage("Wingman: session ready", 4000);
+      void vscode.window.setStatusBarMessage("Sidekick: session ready", 4000);
       return true;
     } catch (err) {
       this.queued = undefined;
@@ -147,7 +147,7 @@ export class Wingman implements vscode.Disposable {
     }
     if (!this.sessionId) {
       const pick = await vscode.window.showInformationMessage(
-        "Wingman has no active session. Start one? (The agent reads the project first, which takes a moment.)",
+        "Sidekick has no active session. Start one? (The agent reads the project first, which takes a moment.)",
         "Start session",
       );
       if (pick === "Start session") {
@@ -171,8 +171,8 @@ export class Wingman implements vscode.Disposable {
         if (manual) {
           void vscode.window.showInformationMessage(
             waitingSkipped
-              ? `Wingman: no new markers (${waitingSkipped} waiting on your reply).`
-              : `Wingman: no saved ${config.markerPrefix}: markers found.`,
+              ? `Sidekick: no new markers (${waitingSkipped} waiting on your reply).`
+              : `Sidekick: no saved ${config.markerPrefix}: markers found.`,
           );
         }
         return;
@@ -213,10 +213,10 @@ export class Wingman implements vscode.Disposable {
       ]
         .filter(Boolean)
         .join(", ");
-      void vscode.window.setStatusBarMessage(`Wingman: ${summary || "nothing applied"}`, 6000);
+      void vscode.window.setStatusBarMessage(`Sidekick: ${summary || "nothing applied"}`, 6000);
       if (outcome.skipped.length) {
         outcome.skipped.forEach((s) => this.log.warn(`Skipped ${s}`));
-        void vscode.window.showWarningMessage(`Wingman skipped ${outcome.skipped.length} marker(s): ${outcome.skipped.join("; ")}`);
+        void vscode.window.showWarningMessage(`Sidekick skipped ${outcome.skipped.length} marker(s): ${outcome.skipped.join("; ")}`);
       }
     } catch (err) {
       this.reportError("Run failed", err);
@@ -296,16 +296,16 @@ export class Wingman implements vscode.Disposable {
   private updateStatus(): void {
     const s = this.status;
     if (this.busy?.kind === "starting") {
-      s.text = "$(sync~spin) Wingman: reading project…";
+      s.text = "$(sync~spin) Sidekick: reading project…";
       s.tooltip = "Starting a session. Click to cancel or manage.";
     } else if (this.busy?.kind === "running") {
-      s.text = `$(sync~spin) Wingman${this.busy.markers ? `: ${this.busy.markers} marker${this.busy.markers > 1 ? "s" : ""}…` : "…"}`;
+      s.text = `$(sync~spin) Sidekick${this.busy.markers ? `: ${this.busy.markers} marker${this.busy.markers > 1 ? "s" : ""}…` : "…"}`;
       s.tooltip = "Implementing markers. Click to cancel or manage.";
     } else if (this.sessionId) {
-      s.text = "$(pass-filled) Wingman";
+      s.text = "$(pass-filled) Sidekick";
       s.tooltip = `Session active (${this.sessionId}). Click to manage.`;
     } else {
-      s.text = "$(circle-slash) Wingman";
+      s.text = "$(circle-slash) Sidekick";
       s.tooltip = "No session. Click to start one.";
     }
   }
@@ -321,12 +321,12 @@ export class Wingman implements vscode.Disposable {
   private reportError(what: string, err: unknown): void {
     if (this.abort?.signal.aborted) {
       this.log.info(`${what}: cancelled`);
-      void vscode.window.setStatusBarMessage("Wingman: cancelled", 4000);
+      void vscode.window.setStatusBarMessage("Sidekick: cancelled", 4000);
       return;
     }
     const msg = err instanceof Error ? err.message : String(err);
     this.log.error(`${what}: ${msg}`);
-    void vscode.window.showErrorMessage(`Wingman: ${what}. ${firstLine(msg)}`, "Show log").then((pick) => {
+    void vscode.window.showErrorMessage(`Sidekick: ${what}. ${firstLine(msg)}`, "Show log").then((pick) => {
       if (pick) {
         this.log.show();
       }

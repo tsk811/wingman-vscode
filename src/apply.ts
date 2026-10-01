@@ -154,7 +154,7 @@ const IMPORT_RETRY_MS = 400;
 
 /**
  * Asks each file's language extension to add imports for names the new code uses
- * (e.g. TypeScript's "Add all missing imports"). Wingman never places imports itself.
+ * (e.g. TypeScript's "Add all missing imports"). Sidekick never places imports itself.
  *
  * The language server may not have analysed the new code yet, so an offered action
  * with no edits is retried a few times before giving up; after a fix is applied it's

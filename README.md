@@ -1,6 +1,6 @@
-# Wingman
+# Sidekick
 
-You write the code. Wingman fills in the small blocks you hand it.
+You write the code. Sidekick fills in the small blocks you hand it.
 
 Write a one-line `@ai:` comment where you want code, save, and a coding agent
 (Codex CLI) replaces that comment with the implementation — usually 1–10 lines.
@@ -19,11 +19,11 @@ export function requireAdmin(user: User): void {
 - **Save to run.** Saving a file that has a marker implements **every saved marker in the
   workspace** in one request, so related markers across files come out consistent.
   Markers in unsaved files are drafts and are left alone. You can also click the
-  **▶ Implement with Wingman** CodeLens or press `Cmd+Alt+I`.
-- **Read-only agent.** The agent never edits files. It returns code as JSON and Wingman
+  **▶ Implement with Sidekick** CodeLens or press `Cmd+Alt+I`.
+- **Read-only agent.** The agent never edits files. It returns code as JSON and Sidekick
   swaps each marker line for it. The code is highlighted briefly and the file is left
   unsaved. `Cmd+Z` undoes it.
-- **Imports.** Wingman doesn't write imports itself. After inserting code it runs your
+- **Imports.** Sidekick doesn't write imports itself. After inserting code it runs your
   language extension's "add missing imports" action (e.g. TypeScript's). Languages whose
   extension doesn't offer that action get no automatic imports — add them yourself.
 - **Questions.** If an instruction is unclear, the agent answers inline instead of guessing:
@@ -35,7 +35,7 @@ export function requireAdmin(user: User): void {
 - **Sessions.** Starting a session has the agent read the project once; later runs resume
   that session, so they're faster and cheaper. Each run also tells the agent which files
   changed since its last turn. Start and end sessions yourself from the status bar item
-  or the command palette (`Wingman: Start session` / `Wingman: End session`). The session
+  or the command palette (`Sidekick: Start session` / `Sidekick: End session`). The session
   survives VS Code restarts.
 
 ## Requirements
@@ -46,11 +46,11 @@ export function requireAdmin(user: User): void {
 ## Install from source
 
 ```bash
-git clone https://github.com/<you>/wingman.git
-cd wingman
+git clone https://github.com/<you>/sidekick.git
+cd sidekick
 npm install
-npm run package          # produces wingman-<version>.vsix
-code --install-extension wingman-*.vsix
+npm run package          # produces sidekick-<version>.vsix
+code --install-extension sidekick-*.vsix
 ```
 
 To hack on it, open the folder in VS Code and press `F5`.
@@ -59,15 +59,15 @@ To hack on it, open the folder in VS Code and press `F5`.
 
 | Setting | Default | |
 |---|---|---|
-| `wingman.provider` | `codex` | Agent to use. Only Codex for now. |
-| `wingman.model` | *(CLI default)* | Model passed to the agent. |
-| `wingman.reasoningEffort` | `medium` | `minimal` / `low` / `medium` / `high`. Lower is faster. |
-| `wingman.markerPrefix` | `@ai` | Marker tag. Replies use `<prefix>-reply`. |
-| `wingman.triggerOnSave` | `true` | Turn off to run only via CodeLens / keybinding. |
-| `wingman.excludeGlobs` | `node_modules`, `dist`, … | Skipped when scanning for markers. `.gitignore` is respected too. |
-| `wingman.codexPath` | *(auto)* | Path to the `codex` binary if it isn't found automatically. |
+| `sidekick.provider` | `codex` | Agent to use. Only Codex for now. |
+| `sidekick.model` | *(CLI default)* | Model passed to the agent. |
+| `sidekick.reasoningEffort` | `medium` | `minimal` / `low` / `medium` / `high`. Lower is faster. |
+| `sidekick.markerPrefix` | `@ai` | Marker tag. Replies use `<prefix>-reply`. |
+| `sidekick.triggerOnSave` | `true` | Turn off to run only via CodeLens / keybinding. |
+| `sidekick.excludeGlobs` | `node_modules`, `dist`, … | Skipped when scanning for markers. `.gitignore` is respected too. |
+| `sidekick.codexPath` | *(auto)* | Path to the `codex` binary if it isn't found automatically. |
 
-`Wingman: Show log` shows each turn's timing and token usage. Set the log level to
+`Sidekick: Show log` shows each turn's timing and token usage. Set the log level to
 Trace (`Developer: Set Log Level…`) to also see the full prompts.
 
 ## License

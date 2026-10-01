@@ -1,4 +1,4 @@
-import { WingmanConfig } from "../config";
+import { SidekickConfig } from "../config";
 
 export interface MarkerResult {
   id: string;
@@ -41,15 +41,15 @@ export interface TurnUsage {
 }
 
 /**
- * A coding agent Wingman can drive. Sessions are read-only: the agent explores the
- * project and returns code as JSON; only Wingman edits files.
+ * A coding agent Sidekick can drive. Sessions are read-only: the agent explores the
+ * project and returns code as JSON; only Sidekick edits files.
  */
 export interface AgentProvider {
   readonly name: string;
   /** Returns a user-facing problem (not installed, not logged in), or undefined if usable. */
-  check(config: WingmanConfig): Promise<string | undefined>;
+  check(config: SidekickConfig): Promise<string | undefined>;
   /** Starts a session primed with `prompt`; returns its id and the agent's reply. */
-  startSession(opts: { cwd: string; prompt: string; config: WingmanConfig; signal: AbortSignal }): Promise<{
+  startSession(opts: { cwd: string; prompt: string; config: SidekickConfig; signal: AbortSignal }): Promise<{
     sessionId: string;
     reply: string;
     usage?: TurnUsage;
@@ -59,7 +59,7 @@ export interface AgentProvider {
     cwd: string;
     sessionId: string;
     prompt: string;
-    config: WingmanConfig;
+    config: SidekickConfig;
     signal: AbortSignal;
   }): Promise<{ output: TurnResult; usage?: TurnUsage }>;
 }

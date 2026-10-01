@@ -3,7 +3,7 @@ import { existsSync } from "fs";
 import * as os from "os";
 import * as path from "path";
 import { Codex, ThreadOptions, Usage } from "@openai/codex-sdk";
-import { WingmanConfig } from "../config";
+import { SidekickConfig } from "../config";
 import { AgentProvider, parseTurnResult, TURN_OUTPUT_SCHEMA, TurnUsage } from "./types";
 
 // macOS only for now. VS Code launched from the Dock/Finder doesn't get the shell's
@@ -17,7 +17,7 @@ const EXTRA_DIRS = [
   path.join(os.homedir(), ".bun", "bin"),
 ];
 
-function findCodex(config: WingmanConfig): string | undefined {
+function findCodex(config: SidekickConfig): string | undefined {
   if (config.codexPath) {
     return existsSync(config.codexPath) ? config.codexPath : undefined;
   }
@@ -34,12 +34,12 @@ function toUsage(u: Usage | null): TurnUsage | undefined {
 export class CodexProvider implements AgentProvider {
   readonly name = "Codex";
 
-  async check(config: WingmanConfig): Promise<string | undefined> {
+  async check(config: SidekickConfig): Promise<string | undefined> {
     const bin = findCodex(config);
     if (!bin) {
       return config.codexPath
-        ? `Codex CLI not found at wingman.codexPath (${config.codexPath}).`
-        : "Codex CLI not found. Install it (npm i -g @openai/codex or brew install codex) or set wingman.codexPath.";
+        ? `Codex CLI not found at sidekick.codexPath (${config.codexPath}).`
+        : "Codex CLI not found. Install it (npm i -g @openai/codex or brew install codex) or set sidekick.codexPath.";
     }
     const loggedIn = await new Promise<boolean>((resolve) =>
       execFile(bin, ["login", "status"], { timeout: 15_000 }, (err) => resolve(!err)),
@@ -47,11 +47,11 @@ export class CodexProvider implements AgentProvider {
     return loggedIn ? undefined : "Codex CLI is not logged in. Run `codex login` in a terminal.";
   }
 
-  private client(config: WingmanConfig): Codex {
+  private client(config: SidekickConfig): Codex {
     return new Codex({ codexPathOverride: findCodex(config) });
   }
 
-  private threadOptions(cwd: string, config: WingmanConfig): ThreadOptions {
+  private threadOptions(cwd: string, config: SidekickConfig): ThreadOptions {
     return {
       workingDirectory: cwd,
       skipGitRepoCheck: true,

@@ -12,7 +12,7 @@ export interface FileEntry {
 }
 
 /**
- * Lists workspace files that Wingman should look at: everything not matched by
+ * Lists workspace files that Sidekick should look at: everything not matched by
  * `excludeGlobs`, and (in a git repo) not ignored by .gitignore.
  */
 export async function listFiles(root: vscode.WorkspaceFolder, excludeGlobs: string[]): Promise<FileEntry[]> {

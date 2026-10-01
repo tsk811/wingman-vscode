@@ -1,4 +1,4 @@
-// Finding `@ai:` command markers and the `@ai-reply:` lines Wingman leaves under them.
+// Finding `@ai:` command markers and the `@ai-reply:` lines Sidekick leaves under them.
 
 export interface Marker {
   id: string;

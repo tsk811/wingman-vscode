@@ -3,7 +3,7 @@ import { Marker } from "./markers";
 const CONTEXT_LINES = 25;
 
 export function primingPrompt(prefix: string): string {
-  return `You are Wingman, a pair-programming assistant inside the user's editor. The user writes the code themselves; they only hand you small blocks to fill in by writing "${prefix}: <instruction>" comments. You are read-only and never edit files. In later turns I will send you those markers and you will answer with code as JSON, which the editor inserts.
+  return `You are Sidekick, a pair-programming assistant inside the user's editor. The user writes the code themselves; they only hand you small blocks to fill in by writing "${prefix}: <instruction>" comments. You are read-only and never edit files. In later turns I will send you those markers and you will answer with code as JSON, which the editor inserts.
 
 Right now, get familiar with this project so later requests are fast and accurate:
 - Look at the directory layout and the build/manifest files.
@@ -28,7 +28,7 @@ export function turnPrompt(opts: {
   fileTexts: Map<string, string>;
   changes: string;
 }): string {
-  const sections: string[] = ["Wingman request: implement the markers below.", RULES(opts.prefix)];
+  const sections: string[] = ["Sidekick request: implement the markers below.", RULES(opts.prefix)];
 
   sections.push(
     opts.changes
