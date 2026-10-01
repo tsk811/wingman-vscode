@@ -2,8 +2,16 @@ import { Marker } from "./markers";
 
 const CONTEXT_LINES = 25;
 
+/** 0-based [from, to) lines shown around a marker; edits to existing code must stay inside it. */
+export function contextWindow(m: Pick<Marker, "line" | "replyLines">, lineCount: number): { from: number; to: number } {
+  return {
+    from: Math.max(0, m.line - CONTEXT_LINES),
+    to: Math.min(lineCount, m.line + 1 + m.replyLines.length + CONTEXT_LINES),
+  };
+}
+
 export function primingPrompt(prefix: string): string {
-  return `You are Sidekick, a pair-programming assistant inside the user's editor. The user writes the code themselves; they only hand you small blocks to fill in by writing "${prefix}: <instruction>" comments. You are read-only and never edit files. In later turns I will send you those markers and you will answer with code as JSON, which the editor inserts.
+  return `You are Sidekick, a pair-programming assistant inside the user's editor. The user writes the code themselves; they only hand you small blocks to fill in or change by writing "${prefix}: <instruction>" comments. You are read-only and never edit files. In later turns I will send you those markers and you will answer with code as JSON, which the editor inserts.
 
 Right now, get familiar with this project so later requests are fast and accurate:
 - Look at the directory layout and the build/manifest files.
@@ -14,12 +22,13 @@ When done, reply with a short summary (at most 8 lines) of the project and its c
 }
 
 const RULES = (prefix: string) => `Rules:
-- Each marker is a comment line "${prefix}: <instruction>". Your code REPLACES that comment line. Implement only what the instruction asks, usually 1-10 lines. Do not rewrite, reformat or extend surrounding code, and do not implement anything that wasn't asked.
+- Each marker is a comment line "${prefix}: <instruction>". Your "code" REPLACES that comment line. Implement only what the instruction asks, usually 1-10 lines. Do not rewrite, reformat or extend surrounding code, and do not implement anything that wasn't asked.
+- If the instruction asks to change existing code (e.g. "optimize the loop below", "rename x in this function"), put those changes in "edits"; "code" is then usually "" (which just removes the marker). Each edit has "startLine" (the 1-based line number shown in the context), "original" (the exact lines you replace, copied verbatim with indentation) and "replacement" (the new lines with their final indentation; "" deletes them). Only edit lines inside the context shown for that marker, never the marker line, its reply lines or another marker, and keep edits from overlapping. Insert new code via "code", not "edits". Otherwise "edits" is [].
 - Markers in one request may be related, even across files. Make them consistent with each other.
 - Write "code" with indentation relative to the marker line (its first level at column 0); the editor adds the marker's indentation. Use the file's indentation style shown per marker. Don't include the marker comment itself.
 - Follow the project's conventions and reuse existing helpers and types. Read whatever files you need; if the change summary says a file changed, trust it over your memory.
 - Never write import/include/use lines. Just use the names you need; the editor adds missing imports automatically.
-- If the instruction is ambiguous or needs a decision from the user, answer status "question" with one concise question in "message". If it can't or shouldn't be done as a small block (needs far more code, refers to things that don't exist), answer "refused" with the reason in "message". For "question"/"refused", "code" is "". For "done", "message" is "" or a very short note.
+- If the instruction is ambiguous or needs a decision from the user, answer status "question" with one concise question in "message". If it can't or shouldn't be done as a small block (needs far more code, refers to things that don't exist), answer "refused" with the reason in "message". For "question"/"refused", "code" is "" and "edits" is []. For "done", "message" is "" or a very short note.
 - Return exactly one result per marker id.`;
 
 export function turnPrompt(opts: {
@@ -38,8 +47,7 @@ export function turnPrompt(opts: {
 
   const blocks = opts.markers.map((m) => {
     const lines = (opts.fileTexts.get(m.relPath) ?? "").split(/\r?\n/);
-    const from = Math.max(0, m.line - CONTEXT_LINES);
-    const to = Math.min(lines.length, m.line + 1 + m.replyLines.length + CONTEXT_LINES);
+    const { from, to } = contextWindow(m, lines.length);
     const width = String(to).length;
     const context = lines
       .slice(from, to)

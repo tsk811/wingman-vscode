@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { countReplyLines, formatReply, Marker, markerRegexes, waitingSignature } from "./markers";
-import { MarkerResult } from "./providers/types";
+import { contextWindow } from "./prompt";
+import { MarkerEdit, MarkerResult } from "./providers/types";
 
 export interface ApplyOutcome {
   done: number;
@@ -48,23 +49,33 @@ export async function applyResults(markers: Marker[], results: MarkerResult[], p
     const planned: Planned[] = [];
     const usedLines = new Set<number>();
 
+    // Find every marker first, so one marker's edits can't overwrite another marker.
+    const located: { m: Marker; r: MarkerResult; at: number; oldCount: number }[] = [];
     for (const m of fileMarkers) {
-      const label = `${m.relPath}:${m.line + 1} "${m.instruction}"`;
       const r = byId.get(m.id);
       if (!r) {
-        outcome.skipped.push(`${label}: the agent returned no result`);
+        outcome.skipped.push(`${label(m)}: the agent returned no result`);
         continue;
       }
       const at = locate(lines, m, usedLines);
       if (at === undefined) {
-        outcome.skipped.push(`${label}: marker was edited or removed during the run`);
+        outcome.skipped.push(`${label(m)}: marker was edited or removed during the run`);
         continue;
       }
       usedLines.add(at);
-      const oldCount = 1 + countReplyLines(lines, at, prefix);
+      located.push({ m, r, at, oldCount: 1 + countReplyLines(lines, at, prefix) });
+    }
+    const taken = located.map(({ at, oldCount }) => ({ startLine: at, oldCount }));
 
+    for (const { m, r, at, oldCount } of located) {
       if (r.status === "done") {
-        planned.push({ startLine: at, oldCount, newLines: reindent(r.code, m.indent), isCode: true });
+        const edits = planEdits(lines, m, at, r.edits, taken);
+        if (typeof edits === "string") {
+          outcome.skipped.push(`${label(m)}: ${edits}`);
+          continue;
+        }
+        planned.push({ startLine: at, oldCount, newLines: reindent(r.code, m.indent), isCode: true }, ...edits);
+        taken.push(...edits);
         outcome.done++;
       } else {
         const reply = formatReply(m, prefix, r.message || (r.status === "question" ? "Need more detail." : "Can't do this one."));
@@ -107,6 +118,66 @@ export async function applyResults(markers: Marker[], results: MarkerResult[], p
     }
   }
   return outcome;
+}
+
+function label(m: Marker): string {
+  return `${m.relPath}:${m.line + 1} "${m.instruction}"`;
+}
+
+/**
+ * Resolves a marker's edits to line ranges in the current text, or returns why it can't.
+ * Each edit's `original` must still be at `startLine` (shifted by however far the marker
+ * moved while the agent worked), or else appear exactly once in the marker's context
+ * window. Edits may not overlap markers, their replies, or each other.
+ */
+function planEdits(lines: string[], m: Marker, at: number, edits: MarkerEdit[], taken: Pick<Planned, "startLine" | "oldCount">[]): Planned[] | string {
+  const drift = at - m.line;
+  const win = contextWindow(m, lines.length - drift);
+  const lo = Math.max(0, win.from + drift);
+  const hi = Math.min(lines.length, win.to + drift);
+  const plans: Planned[] = [];
+
+  for (const e of edits) {
+    const original = toLines(e.original);
+    if (!original.length) {
+      return `an edit at line ${e.startLine} quoted no original lines`;
+    }
+    const fits = (i: number) =>
+      i >= lo && i + original.length <= hi && original.every((l, k) => lines[i + k].trimEnd() === l.trimEnd());
+    let start = e.startLine - 1 + drift;
+    if (!fits(start)) {
+      const found: number[] = [];
+      for (let i = lo; i < hi; i++) {
+        if (fits(i)) {
+          found.push(i);
+        }
+      }
+      if (found.length !== 1) {
+        return found.length
+          ? `the code an edit replaces appears more than once near the marker`
+          : `an edit at line ${e.startLine} no longer matches the file`;
+      }
+      start = found[0];
+    }
+    const end = start + original.length;
+    if ([...taken, ...plans].some((p) => start < p.startLine + p.oldCount && p.startLine < end)) {
+      return `an edit at line ${e.startLine} overlaps a marker or another edit`;
+    }
+    plans.push({ startLine: start, oldCount: original.length, newLines: toLines(e.replacement), isCode: true });
+  }
+  return plans;
+}
+
+/** Splits into lines, ignoring one trailing line break; "" is no lines. */
+function toLines(text: string): string[] {
+  if (!text) {
+    return [];
+  }
+  const lines = text.split(/\r?\n/);
+  if (lines[lines.length - 1] === "") {
+    lines.pop();
+  }
+  return lines;
 }
 
 /** Finds the marker line by its exact text, nearest to where it was when scanned. */

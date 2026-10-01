@@ -1,10 +1,21 @@
 import { SidekickConfig } from "../config";
 
+/** A change to existing lines near a marker, for instructions like "optimize the loop below". */
+export interface MarkerEdit {
+  /** 1-based line of the first replaced line, as numbered in the prompt's context. */
+  startLine: number;
+  /** The exact lines being replaced; checked against the file before applying. */
+  original: string;
+  /** New lines, with their final indentation. Empty deletes the lines. */
+  replacement: string;
+}
+
 export interface MarkerResult {
   id: string;
   status: "done" | "question" | "refused";
   code: string;
   message: string;
+  edits: MarkerEdit[];
 }
 
 export interface TurnResult {
@@ -22,12 +33,25 @@ export const TURN_OUTPUT_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["id", "status", "code", "message"],
+        required: ["id", "status", "code", "message", "edits"],
         properties: {
           id: { type: "string" },
           status: { type: "string", enum: ["done", "question", "refused"] },
           code: { type: "string" },
           message: { type: "string" },
+          edits: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["startLine", "original", "replacement"],
+              properties: {
+                startLine: { type: "integer" },
+                original: { type: "string" },
+                replacement: { type: "string" },
+              },
+            },
+          },
         },
       },
     },
@@ -69,6 +93,9 @@ export function parseTurnResult(raw: string): TurnResult {
   const parsed = JSON.parse(text) as TurnResult;
   if (!parsed || !Array.isArray(parsed.results)) {
     throw new Error("Agent response has no `results` array");
+  }
+  for (const r of parsed.results) {
+    r.edits = Array.isArray(r.edits) ? r.edits : [];
   }
   return parsed;
 }

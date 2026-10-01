@@ -4,7 +4,8 @@ You write the code. Sidekick fills in the small blocks you hand it.
 
 Write a one-line `@ai:` comment where you want code, save, and a coding agent
 (Codex CLI) replaces that comment with the implementation — usually 1–10 lines.
-It sees your whole project, but it only touches the spots you marked.
+It sees your whole project, but it only touches the spots you marked — the marker line, or
+code right around it when you ask it to change existing code.
 
 ```ts
 export function requireAdmin(user: User): void {
@@ -23,6 +24,11 @@ export function requireAdmin(user: User): void {
 - **Read-only agent.** The agent never edits files. It returns code as JSON and Sidekick
   swaps each marker line for it. The code is highlighted briefly and the file is left
   unsaved. `Cmd+Z` undoes it.
+- **Changing existing code.** A marker can also ask for changes to nearby code, e.g.
+  `// @ai: use reduce instead of the loop below`. The agent quotes the exact lines it
+  replaces; Sidekick checks they're still there (even if you've edited above them since)
+  and skips the marker if they aren't. Only lines within 25 lines of the marker, in the
+  same file, can be changed.
 - **Imports.** Sidekick doesn't write imports itself. After inserting code it runs your
   language extension's "add missing imports" action (e.g. TypeScript's). Languages whose
   extension doesn't offer that action get no automatic imports — add them yourself.
